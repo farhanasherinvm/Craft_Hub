@@ -9,18 +9,7 @@ class ProductCategory(models.Model):
         return self.name
 
 class Product(models.Model):
-    PRODUCT_TYPE_CHOICES = [
-        ('saree', 'Saree'),
-        ('shirt', 'Shirt'),
-        ('dhoti', 'Dhoti'),
-    ]
-
-    FABRIC_CHOICES = [
-        ('fabric_1', 'Fabric 1'),
-        ('fabric_2', 'Fabric 2'),
-        ('fabric_3', 'Fabric 3'),
-        
-    ]
+    
 
 
     SIZE_CHOICES = [
@@ -33,8 +22,8 @@ class Product(models.Model):
     ]
     category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, related_name='products')
     name = models.CharField(max_length=255)
-    product_type = models.CharField(max_length=20, choices=PRODUCT_TYPE_CHOICES)
-    fabric = models.CharField(max_length=50, choices=FABRIC_CHOICES)
+    product_type = models.CharField(max_length=20,)
+    fabric = models.CharField(max_length=50, null=True,blank=True)
     color = models.CharField(max_length=20)
     size = models.CharField(max_length=10, choices=SIZE_CHOICES)
     product_code = models.CharField(max_length=50, unique=True)

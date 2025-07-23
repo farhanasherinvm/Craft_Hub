@@ -61,11 +61,17 @@ class ProductUpdateView(generics.UpdateAPIView):
 
         return Response(self.get_serializer(product).data, status=status.HTTP_200_OK)
 
-
 class ProductDeleteView(generics.DestroyAPIView):
     queryset = Product.objects.all()
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
     lookup_field = 'id'
+
+    def destroy(self, request, *args, **kwargs):
+        product = self.get_object()
+        product_name = product.name
+        self.perform_destroy(product)
+        return Response({"message": f"Product '{product_name}' deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
 class ProductImageUploadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -126,5 +132,6 @@ class CategoryUpdateView(APIView):
 class CategoryDeleteView(APIView):
     def delete(self, request, id):
         category = get_object_or_404(ProductCategory, id=id)
+        category_name = category.name
         category.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": f"Category '{category_name}' deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
