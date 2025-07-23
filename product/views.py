@@ -26,12 +26,10 @@ class ProductCreateView(generics.CreateAPIView):
 
 
 class ProductListRetrieveView(generics.ListAPIView):
-    serializer_class = ProductSerializer
     queryset = Product.objects.all()
-    permission_classes = [IsAuthenticated] 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = ['name', 'product_code', 'description']
-    filterset_fields = ['product_type', 'size']  # Add more fields if needed
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [OrderingFilter]
     ordering_fields = ['price', 'created_at', 'updated_at']
 
 
@@ -135,3 +133,20 @@ class CategoryDeleteView(APIView):
         category_name = category.name
         category.delete()
         return Response({"message": f"Category '{category_name}' deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+class ProductSearchView(generics.ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter]
+    search_fields = ['name', 'product_code', 'description']
+
+
+class ProductFilterView(generics.ListAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['category', 'size', 'allow_customization']
+
+
