@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
 from .models import Product, ProductImage,ProductCategory
 from .serializers import ProductSerializer,ProductImageSerializer,ProductCategorySerializer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny,IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.views import APIView
@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404
 class ProductCreateView(generics.CreateAPIView):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAdminUser] 
 
     def create(self, request, *args, **kwargs):
         images = request.FILES.getlist('images')
@@ -28,7 +28,7 @@ class ProductCreateView(generics.CreateAPIView):
 class ProductListRetrieveView(generics.ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [OrderingFilter]
     ordering_fields = ['price', 'created_at', 'updated_at']
 
@@ -36,14 +36,14 @@ class ProductListRetrieveView(generics.ListAPIView):
 class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [AllowAny] 
     lookup_field = 'id'
 
 
 class ProductUpdateView(generics.UpdateAPIView):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAdminUser] 
     lookup_field = 'id'
 
     def update(self, request, *args, **kwargs):
@@ -61,7 +61,7 @@ class ProductUpdateView(generics.UpdateAPIView):
 
 class ProductDeleteView(generics.DestroyAPIView):
     queryset = Product.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
     lookup_field = 'id'
 
     def destroy(self, request, *args, **kwargs):
@@ -71,7 +71,7 @@ class ProductDeleteView(generics.DestroyAPIView):
         return Response({"message": f"Product '{product_name}' deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 class ProductImageUploadView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAdminUser]
 
     def post(self, request, id):
         try:
@@ -95,6 +95,7 @@ class ProductImageUploadView(APIView):
 
 
 class CategoryCreateView(APIView):
+    permission_classes = [IsAdminUser]
     def post(self, request):
         serializer = ProductCategorySerializer(data=request.data)
         if serializer.is_valid():
@@ -104,6 +105,7 @@ class CategoryCreateView(APIView):
 
 
 class CategoryListView(APIView):
+    permission_classes=[AllowAny]
     def get(self, request):
         categories = ProductCategory.objects.all()
         serializer = ProductCategorySerializer(categories, many=True)
@@ -111,6 +113,7 @@ class CategoryListView(APIView):
 
 
 class CategoryDetailView(APIView):
+    permission_classes=[AllowAny]
     def get(self, request, id):
         category = get_object_or_404(ProductCategory, id=id)
         serializer = ProductCategorySerializer(category)
@@ -118,6 +121,7 @@ class CategoryDetailView(APIView):
 
 
 class CategoryUpdateView(APIView):
+    permission_classes=[IsAdminUser]
     def put(self, request, id):
         category = get_object_or_404(ProductCategory, id=id)
         serializer = ProductCategorySerializer(category, data=request.data)
@@ -128,6 +132,7 @@ class CategoryUpdateView(APIView):
 
 
 class CategoryDeleteView(APIView):
+    permission_classes=[IsAdminUser]
     def delete(self, request, id):
         category = get_object_or_404(ProductCategory, id=id)
         category_name = category.name
@@ -137,7 +142,7 @@ class CategoryDeleteView(APIView):
 class ProductSearchView(generics.ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [SearchFilter]
     search_fields = ['name', 'product_code', 'description']
 
@@ -145,7 +150,7 @@ class ProductSearchView(generics.ListAPIView):
 class ProductFilterView(generics.ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['category', 'size', 'allow_customization']
 
