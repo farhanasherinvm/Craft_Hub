@@ -144,7 +144,7 @@ class ProductSearchView(generics.ListAPIView):
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
     filter_backends = [SearchFilter]
-    search_fields = ['name', 'product_code', 'description']
+    search_fields = ['name','product_code','stock_keeping_unit','description', 'color']
 
 
 class ProductFilterView(generics.ListAPIView):
@@ -152,6 +152,6 @@ class ProductFilterView(generics.ListAPIView):
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['category', 'size', 'allow_customization']
+    filterset_fields = ['category','product_type','fabric','allow_customization', 'is_draft']
 
 
