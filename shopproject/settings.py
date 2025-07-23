@@ -78,12 +78,8 @@ WSGI_APPLICATION = 'shopproject.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'product_db',
-        'USER': 'postgres',         # replace with your PostgreSQL username
-        'PASSWORD': 'Alex@2001', # replace with your password
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / "db.sqlite3",
     }
 }
 

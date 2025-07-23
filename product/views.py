@@ -8,6 +8,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from rest_framework import viewsets
+from .models import Cart, CartItem, Wishlist
+from .serializers import CartSerializer, CartItemSerializer, WishlistSerializer
+from rest_framework.decorators import action
+
+
 
 
 class ProductCreateView(generics.CreateAPIView):
@@ -155,3 +161,94 @@ class ProductFilterView(generics.ListAPIView):
     filterset_fields = ['category', 'size', 'allow_customization']
 
 
+
+
+class CartViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        cart, _ = Cart.objects.get_or_create(user=request.user, saved_for_later=False)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data)
+
+    def create(self, request):
+        cart, _ = Cart.objects.get_or_create(user=request.user, saved_for_later=False)
+        serializer = CartItemSerializer(data=request.data)
+        if serializer.is_valid():
+            product = serializer.validated_data['product']
+            quantity = serializer.validated_data['quantity']
+
+            cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+
+            total_quantity = quantity if created else cart_item.quantity + quantity
+
+            if total_quantity > product.current_stock:
+                return Response(
+                    {"error": f"Only {product.current_stock} items left in stock for {product.name}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            cart_item.quantity = total_quantity
+            cart_item.save()
+            return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, pk=None):
+        cart_item = get_object_or_404(CartItem, pk=pk, cart__user=request.user)
+        serializer = CartItemSerializer(cart_item, data=request.data, partial=True)
+        if serializer.is_valid():
+            quantity = serializer.validated_data.get('quantity', cart_item.quantity)
+
+            if quantity > cart_item.product.current_stock:
+                return Response(
+                    {"error": f"Only {cart_item.product.current_stock} items available for {cart_item.product.name}"},
+                    status=400
+                )
+
+            cart_item.quantity = quantity
+            cart_item.save()
+            return Response(CartItemSerializer(cart_item).data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, pk=None):
+        cart_item = get_object_or_404(CartItem, pk=pk, cart__user=request.user)
+        cart_item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['post'], url_path='save-for-later')
+    def save_for_later(self, request):
+        cart_item_id = request.data.get("cart_item_id")
+        cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
+
+        saved_cart, _ = Cart.objects.get_or_create(user=request.user, saved_for_later=True)
+        # Move item to saved cart
+        cart_item.cart = saved_cart
+        cart_item.save()
+
+        return Response({"message": "Item moved to saved for later."}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='saved-items')
+    def view_saved_items(self, request):
+        saved_cart = Cart.objects.filter(user=request.user, saved_for_later=True).first()
+        if not saved_cart:
+            return Response({"message": "No saved items."}, status=status.HTTP_204_NO_CONTENT)
+        serializer = CartSerializer(saved_cart)
+        return Response(serializer.data)
+
+   
+class WishlistViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = WishlistSerializer
+
+    def get_queryset(self):
+        return Wishlist.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        wishlist_item = self.get_object()
+        wishlist_item.delete()
+        return Response({"message": "Item removed from wishlist."}, status=status.HTTP_204_NO_CONTENT)
