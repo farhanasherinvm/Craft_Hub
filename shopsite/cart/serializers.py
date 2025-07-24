@@ -10,23 +10,21 @@ class CartitemSerializer(serializers.ModelSerializer):
         fields=['id','product','quantity','added_at']
     
     def create(self, validated_data):
+        user = self.context['request'].user
         product = validated_data['product']
-        quantity = validated_data.get('quantity', 1)
+        quantity = validated_data.get('quantity', 1)  # default to 1 if not provided
 
-    # Check if product already in cart
-        existing_item = Cartitem.objects.filter(product=product).first()
+        existing_item = Cartitem.objects.filter(user=user, product=product).first()
 
         if existing_item:
-        # If product already exists, just increase quantity
-          existing_item.quantity += quantity
-          existing_item.save()
-          return existing_item
+            existing_item.quantity += quantity
+            existing_item.save()
+            return existing_item
         else:
-        # If not found, create new cart item
-            return Cartitem.objects.create(product=product, quantity=quantity)
-        
+            return Cartitem.objects.create(user=user, product=product, quantity=quantity)
 class Wishlistserializer(serializers.ModelSerializer):
     class Meta:
         model=Wishlist
         fields='__all__'
+        read_only_fields=['user']
 
