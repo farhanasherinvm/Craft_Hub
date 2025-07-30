@@ -1,4 +1,6 @@
-from django.urls import path
+from django.urls import path,include
+from rest_framework.routers import DefaultRouter
+from .views import CartViewSet,WishlistViewSet
 from .views import (
     ProductCreateView,
     ProductListRetrieveView,
@@ -14,6 +16,23 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+router = DefaultRouter()
+router.register(r'cart', CartViewSet, basename='cart')
+router.register(r'wishlist', WishlistViewSet, basename='wishlist')
+
+# # Manual mapping for CartViewSet .
+cart_list = CartViewSet.as_view({
+    'get': 'list',     # View cart
+    'post': 'create',  # Add to cart
+})
+
+cart_detail = CartViewSet.as_view({
+    'put': 'update',    # Update quantity
+    'patch': 'update',  # Update quantity (partial)
+    'delete': 'destroy' # Remove from cart
+})
+
+
 
 urlpatterns = [
     # Product CRUD
@@ -40,5 +59,13 @@ urlpatterns = [
     # Auth
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    path('', cart_list, name='cart'),               # GET, POST
+    # path('cart/<int:pk>/', cart_detail, name='cart-detail'),  # PUT, PATCH, DELETE
+    path('', include(router.urls)),                      # wishlist/
+
+    # Add custom cart action endpoints
+    path('cart/save-for-later/', CartViewSet.as_view({'post': 'save_for_later'}), name='cart-save-for-later'),
+    path('cart/saved-items/', CartViewSet.as_view({'get': 'view_saved_items'}), name='cart-saved-items'),
     
 ]
